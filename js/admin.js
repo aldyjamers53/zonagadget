@@ -1,5 +1,6 @@
 let isAdminLoggedIn = false;
 let activeAdminTab = "stats";
+let editingProductId = null;
 
 function renderAdminDashboard() {
     const appView = document.getElementById('app-view');
@@ -11,15 +12,15 @@ function renderAdminDashboard() {
     appView.innerHTML = `
         <div class="admin-layout">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:16px; gap:12px;">
-                <h2>🔐 Secret Management Panel</h2>
-                <button class="btn-danger" onclick="logoutAdmin()">Log Out Dashboard</button>
+                <h2>🔐 Panel Manajemen Katalog</h2>
+                <button class="btn-danger" onclick="logoutAdmin()">Log Out</button>
             </div>
 
             <div class="admin-grid-nav">
-                <button class="admin-tab-btn ${activeAdminTab==='stats'?'active':''}" onclick="switchAdminTab('stats')">📊 Ringkasan Statistik</button>
-                <button class="admin-tab-btn ${activeAdminTab==='add-product'?'active':''}" onclick="switchAdminTab('add-product')">➕ Tambah Produk</button>
-                <button class="admin-tab-btn ${activeAdminTab==='manage-products'?'active':''}" onclick="switchAdminTab('manage-products')">🛠 Kelola Semua Produk</button>
-                <button class="admin-tab-btn ${activeAdminTab==='settings'?'active':''}" onclick="switchAdminTab('settings')">⚙ Pengaturan Toko & SEO</button>
+                <button class="admin-tab-btn ${activeAdminTab==='stats'?'active':''}" onclick="switchAdminTab('stats')">📊 Statistik</button>
+                <button class="admin-tab-btn ${activeAdminTab==='add-product'?'active':''}" onclick="switchAdminTab('add-product')">➕ ${editingProductId ? 'Edit' : 'Tambah'} Produk</button>
+                <button class="admin-tab-btn ${activeAdminTab==='manage-products'?'active':''}" onclick="switchAdminTab('manage-products')">🛠 Kelola Produk</button>
+                <button class="admin-tab-btn ${activeAdminTab==='settings'?'active':''}" onclick="switchAdminTab('settings')">⚙ Pengaturan & SEO</button>
             </div>
 
             <div id="admin-tab-content"></div>
@@ -59,10 +60,12 @@ function handleAdminLogin() {
 
 function logoutAdmin() {
     isAdminLoggedIn = false;
+    editingProductId = null;
     window.location.hash = "#/";
 }
 
 function switchAdminTab(tabName) {
+    if (tabName !== 'add-product') editingProductId = null;
     activeAdminTab = tabName;
     renderAdminDashboard();
 }
@@ -82,72 +85,75 @@ function renderActiveTabContent() {
                 <div class="stat-card"><div class="stat-val">${inactiveProd}</div><div>Produk Nonaktif</div></div>
                 <div class="stat-card"><div class="stat-val" style="color:${settings.store_status==='OPEN'?'#22c55e':'#ef4444'}">${settings.store_status}</div><div>Status Toko</div></div>
             </div>
-            <p style="color:var(--text-secondary);">Gunakan opsi menu navigasi tab admin untuk memperbarui data.</p>
         `;
     } 
     else if (activeAdminTab === 'add-product') {
+        const p = editingProductId ? products.find(prod => prod.id === editingProductId) : null;
+        const imagesValue = p ? (Array.isArray(p.images) ? p.images.join(', ') : p.thumbnail) : '';
+
         target.innerHTML = `
-            <h3 style="margin-bottom:16px;">Form Tambah Produk</h3>
+            <h3 style="margin-bottom:16px;">${p ? '✏️ Edit Produk: ' + p.title : '➕ Form Tambah Produk Baru'}</h3>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                 <div class="form-group">
                     <label>Nama Produk</label>
-                    <input type="text" id="form-title" class="form-control" placeholder="Contoh: POCO X7 Pro">
+                    <input type="text" id="form-title" class="form-control" value="${p ? p.title : ''}" placeholder="Contoh: POCO X7 Pro">
                 </div>
                 <div class="form-group">
                     <label>Slug URL</label>
-                    <input type="text" id="form-slug" class="form-control" placeholder="poco-x7-pro">
+                    <input type="text" id="form-slug" class="form-control" value="${p ? p.slug : ''}" placeholder="poco-x7-pro">
                 </div>
                 <div class="form-group">
                     <label>Brand</label>
                     <select id="form-brand" class="form-control">
-                        ${BRANDS_LIST.map(b=>`<option value="${b}">${b}</option>`).join('')}
+                        ${BRANDS_LIST.map(b=>`<option value="${b}" ${p && p.brand===b ? 'selected':''}>${b}</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Kategori</label>
                     <select id="form-category" class="form-control">
-                        ${CATEGORIES_LIST.map(c=>`<option value="${c}">${c}</option>`).join('')}
+                        ${CATEGORIES_LIST.map(c=>`<option value="${c}" ${p && p.category===c ? 'selected':''}>${c}</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Harga Normal</label>
-                    <input type="number" id="form-oldprice" class="form-control" value="0">
+                    <input type="number" id="form-oldprice" class="form-control" value="${p ? p.old_price : 0}">
                 </div>
                 <div class="form-group">
                     <label>Harga Promo</label>
-                    <input type="number" id="form-price" class="form-control" value="0">
+                    <input type="number" id="form-price" class="form-control" value="${p ? p.price : 0}">
                 </div>
                 <div class="form-group" style="grid-column: 1/-1;">
-                    <label>Thumbnail Gambar URL</label>
-                    <input type="text" id="form-thumb" class="form-control" value="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&auto=format&fit=crop" oninput="updateAdminImagePreview(this.value)">
-                    <div class="img-preview" id="form-img-preview-box">
-                        <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&auto=format&fit=crop">
-                    </div>
+                    <label>URL Foto Produk (Bisa isi sampai 8 foto, pisahkan dengan tanda koma `,` )</label>
+                    <textarea id="form-thumb" class="form-control" rows="2" placeholder="URL_Foto_1, URL_Foto_2, URL_Foto_3" oninput="updateAdminImagePreview(this.value)">${imagesValue}</textarea>
+                    <div id="form-img-preview-box" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
                 </div>
                 <div class="form-group" style="grid-column: 1/-1;">
                     <label>Link Affiliate Shopee</label>
-                    <input type="text" id="form-aff" class="form-control" value="https://shopee.co.id">
+                    <input type="text" id="form-aff" class="form-control" value="${p ? p.affiliate_url : 'https://shopee.co.id'}">
                 </div>
                 <div class="form-group" style="grid-column: 1/-1;">
                     <label>Deskripsi Lengkap</label>
-                    <textarea id="form-desc" class="form-control" rows="4"></textarea>
+                    <textarea id="form-desc" class="form-control" rows="4">${p ? p.description : ''}</textarea>
                 </div>
                 <div class="form-group">
                     <label>Status</label>
                     <select id="form-status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="active" ${p && p.status==='active'?'selected':''}>Active</option>
+                        <option value="inactive" ${p && p.status==='inactive'?'selected':''}>Inactive</option>
                     </select>
                 </div>
             </div>
-            <button class="btn-primary" style="margin-top:16px;" onclick="saveNewProduct()">Publikasikan Produk</button>
+            <button class="btn-primary" style="margin-top:16px;" onclick="saveProductData()">${p ? 'Simpan Perubahan' : 'Publikasikan Produk'}</button>
         `;
         
         const titleIn = document.getElementById('form-title');
         const slugIn = document.getElementById('form-slug');
-        titleIn.addEventListener('input', () => {
-            slugIn.value = titleIn.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        });
+        if(!p) {
+            titleIn.addEventListener('input', () => {
+                slugIn.value = titleIn.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            });
+        }
+        updateAdminImagePreview(imagesValue);
     }
     else if (activeAdminTab === 'manage-products') {
         let html = `
@@ -166,7 +172,10 @@ function renderActiveTabContent() {
                     <td>${p.brand}</td>
                     <td>Rp ${p.price.toLocaleString('id-ID')}</td>
                     <td><span style="color:${p.status==='active'?'#22c55e':'#ef4444'}">${p.status.toUpperCase()}</span></td>
-                    <td><button class="btn-danger" onclick="deleteProduct(${p.id})">Hapus</button></td>
+                    <td>
+                        <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem; margin-right:4px;" onclick="startEditProduct(${p.id})">Edit</button>
+                        <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteProduct(${p.id})">Hapus</button>
+                    </td>
                 </tr>
             `;
         });
@@ -208,39 +217,74 @@ function renderActiveTabContent() {
     }
 }
 
-function updateAdminImagePreview(url) {
+function updateAdminImagePreview(rawUrls) {
     const previewBox = document.getElementById('form-img-preview-box');
-    if(!url) { previewBox.innerHTML = ''; return; }
-    const img = new Image();
-    img.src = url;
-    img.onload = () => previewBox.innerHTML = `<img src="${url}">`;
-    img.onerror = () => previewBox.innerHTML = `<span style="color:red; font-size:0.75rem;">no-image.webp</span>`;
+    if(!previewBox) return;
+    previewBox.innerHTML = '';
+    if(!rawUrls.trim()) return;
+
+    let urls = rawUrls.split(',').map(url => url.trim()).filter(url => url !== '');
+    if(urls.length > 8) urls = urls.slice(0, 8);
+
+    urls.forEach(url => {
+        let div = document.createElement('div');
+        div.className = 'img-preview';
+        div.innerHTML = `<img src="${url}" onerror="this.parentElement.innerHTML='<span style=color:red;font-size:10px>Error</span>'">`;
+        previewBox.appendChild(div);
+    });
 }
 
-function saveNewProduct() {
+function startEditProduct(id) {
+    editingProductId = id;
+    activeAdminTab = "add-product";
+    renderAdminDashboard();
+}
+
+function saveProductData() {
     const title = document.getElementById('form-title').value;
     const slug = document.getElementById('form-slug').value;
     const brand = document.getElementById('form-brand').value;
     const category = document.getElementById('form-category').value;
     const old_price = parseInt(document.getElementById('form-oldprice').value) || 0;
     const price = parseInt(document.getElementById('form-price').value) || 0;
-    const thumbnail = document.getElementById('form-thumb').value;
+    const rawThumb = document.getElementById('form-thumb').value;
     const affiliate_url = document.getElementById('form-aff').value;
     const description = document.getElementById('form-desc').value;
     const status = document.getElementById('form-status').value;
 
     if(!title || !slug) { alert("Judul dan Slug wajib diisi!"); return; }
 
-    const newId = products.length > 0 ? Math.max(...products.map(p=>p.id)) + 1 : 1;
-    products.unshift({ id: newId, title, slug, brand, category, price, old_price, description, affiliate_url, status, thumbnail });
+    let imageArray = rawThumb.split(',').map(url => url.trim()).filter(url => url !== '');
+    if(imageArray.length === 0) {
+        imageArray.push("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&auto=format&fit=crop");
+    }
+    const mainThumbnail = imageArray[0];
+
+    if (editingProductId) {
+        const index = products.findIndex(p => p.id === editingProductId);
+        if (index !== -1) {
+            products[index] = {
+                ...products[index], title, slug, brand, category, price, old_price, description, affiliate_url, status,
+                thumbnail: mainThumbnail, images: imageArray
+            };
+            alert("Produk berhasil diperbarui!");
+        }
+    } else {
+        const newId = products.length > 0 ? Math.max(...products.map(p=>p.id)) + 1 : 1;
+        products.unshift({
+            id: newId, title, slug, brand, category, price, old_price, description, affiliate_url, status,
+            thumbnail: mainThumbnail, images: imageArray
+        });
+        alert("Produk baru berhasil diterbitkan!");
+    }
     
     localStorage.setItem('zg_products', JSON.stringify(products));
-    alert("Produk berhasil diterbitkan!");
+    editingProductId = null;
     switchAdminTab('manage-products');
 }
 
 function deleteProduct(id) {
-    if(confirm("Hapus produk ini?")) {
+    if(confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
         products = products.filter(p => p.id !== id);
         localStorage.setItem('zg_products', JSON.stringify(products));
         renderActiveTabContent();
@@ -259,4 +303,4 @@ function saveStoreSettings() {
     alert("Pengaturan diperbarui!");
     updateStoreNoticeBar();
     renderAdminDashboard();
-      }
+}
