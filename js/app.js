@@ -148,7 +148,9 @@ function renderProductGrid() {
         return;
     }
 
-    // LOGIKA GENERATOR PAGINATION
+    // =========================================================================
+    // LOGIKA GENERATOR PAGINATION (VERSI AMAN LAYOUT)
+    // =========================================================================
     const totalItems = filtered.length;
     const totalPages = Math.ceil(totalItems / productsPerPage);
     if (currentPage > totalPages) currentPage = 1;
@@ -178,16 +180,38 @@ function renderProductGrid() {
 
     let paginationHtml = '';
     if (totalPages > 1) {
-        paginationHtml = `<div class="pagination-container" style="grid-column:1/-1; display:flex; justify-content:center; align-items:center; gap:8px; margin-top:32px;">`;
-        paginationHtml += `<button class="brand-btn" style="width:auto;" ${currentPage === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="changePage(${currentPage - 1})"`}>&larr; Prev</button>`;
-        for (let i = 1; i <= totalPages; i++) {
-            paginationHtml += `<button class="brand-btn ${currentPage === i ? 'active' : ''}" style="width:auto; padding:8px 16px;" onclick="changePage(${i})">${i}</button>`;
+        paginationHtml = `<div class="pagination-container">`;
+        
+        // Tombol Prev
+        paginationHtml += `<button class="brand-btn" style="width:auto; padding: 8px 12px;" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="changePage(${currentPage - 1})"`}>&larr; Prev</button>`;
+        
+        // Menentukan range nomor halaman yang tampil agar minimal 6 nomor (jika tersedia)
+        let maxVisibleButtons = 6; 
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+        let endPage = startPage + maxVisibleButtons - 1;
+
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxVisibleButtons + 1);
         }
-        paginationHtml += `<button class="brand-btn" style="width:auto;" ${currentPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="changePage(${currentPage + 1})"`}>Next &rarr;</button></div>`;
+
+        // Looping mencetak nomor halaman
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <button class="brand-btn ${currentPage === i ? 'active' : ''}" 
+                        style="width:auto; min-width:40px; padding:8px 12px; text-align:center;" 
+                        onclick="changePage(${i})">${i}</button>
+            `;
+        }
+
+        // Tombol Next
+        paginationHtml += `<button class="brand-btn" style="width:auto; padding: 8px 12px;" ${currentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="changePage(${currentPage + 1})"`}>Next &rarr;</button>`;
+        
+        paginationHtml += `</div>`;
     }
 
     gridTarget.innerHTML = productsHtml + paginationHtml;
-}
+} // <-- PERBAIKAN: Menutup fungsi renderProductGrid() dengan benar di sini
 
 function changePage(pageNumber) {
     currentPage = pageNumber;
