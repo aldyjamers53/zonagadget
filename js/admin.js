@@ -122,11 +122,12 @@ function renderActiveTabContent() {
                     <label>Harga Promo</label>
                     <input type="number" id="form-price" class="form-control" value="${p ? p.price : 0}">
                 </div>
-                <div class="form-group" style="grid-column: 1/-1;">
-                    <label>URL Foto Produk (Bisa isi sampai 8 foto, pisahkan dengan tanda koma `,` )</label>
-                    <textarea id="form-thumb" class="form-control" rows="2" placeholder="URL_Foto_1, URL_Foto_2, URL_Foto_3" oninput="updateAdminImagePreview(this.value)">${imagesValue}</textarea>
-                    <div id="form-img-preview-box" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
-                </div>
+                <div class="form-group">
+    <label for="product-images-input" style="font-weight: 600; display: block; margin-bottom: 8px;">
+        URL Foto Produk (Bisa isi sampai 8 foto, pisahkan dengan tanda koma)
+    </label>
+    <input type="text" id="product-images-input" class="form-control" placeholder="Contoh: https://link.com/foto1.jpg, https://link.com/foto2.jpg" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+</div>
                 <div class="form-group" style="grid-column: 1/-1;">
                     <label>Link Affiliate Shopee</label>
                     <input type="text" id="form-aff" class="form-control" value="${p ? p.affiliate_url : 'https://shopee.co.id'}">
