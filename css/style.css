@@ -74,7 +74,17 @@ header { position: sticky; top: 0; z-index: 100; background: var(--glass-bg); ba
 .brand-btn { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md); text-align: left; font-size: 0.85rem; font-weight: 500; cursor: pointer; width: 100%; transition: all 0.2s; }
 .brand-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
 .sort-select { width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); }
-
+/* Pastikan kontainer pagination rapi dan tidak merusak layout */
+.pagination-container {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 32px;
+    flex-wrap: wrap; /* <-- INI KUNCINYA: agar tombol turun ke bawah jika penuh (tidak keluar arena) */
+    padding: 0 8px;
+}
 /* PRODUCT GRID & CARD */
 .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media(min-width: 640px) { .products-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
