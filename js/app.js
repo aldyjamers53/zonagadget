@@ -283,3 +283,74 @@ function renderSitemapView() {
 }
 
 function defineGlobal(name, fn) { window[name] = fn; }
+// =========================================================================
+// SUNTIKAN SCRIPT PENYELAMAT ADMIN PANEL (TAMBAHKAN DI PALING BAWAH APP.JS)
+// =========================================================================
+function handlePublishProduct() {
+    try {
+        // 1. Ambil semua data dari form berdasarkan urutan elemen secara aman
+        const inputs = document.querySelectorAll('#app-view input');
+        const selects = document.querySelectorAll('#app-view select');
+        const textarea = document.querySelector('#app-view textarea');
+
+        // Mapping kecocokan field berdasarkan urutan form di layar Anda
+        const nameInput = inputs[0]?.value.trim() || '';
+        const slugInput = inputs[1]?.value.trim() || '';
+        const brandSelect = selects[0]?.value || 'Samsung';
+        const categorySelect = selects[1]?.value || 'Smartphone';
+        const oldPriceInput = parseFloat(inputs[2]?.value) || 0;
+        const priceInput = parseFloat(inputs[3]?.value) || 0;
+        const imagesInput = inputs[4]?.value.trim() || '';
+        const affiliateInput = inputs[5]?.value.trim() || 'https://shopee.co.id';
+        const descInput = textarea?.value.trim() || '';
+        const statusSelect = selects[2]?.value || 'Active';
+
+        // Validasi minimal nama produk wajib diisi
+        if (!nameInput) {
+            alert("Gagal memproses: Nama Produk tidak boleh kosong!");
+            return;
+        }
+
+        // 2. Olah string URL gambar menjadi Array jika dipisah koma
+        const imagesArray = imagesInput.split(',').map(url => url.trim()).filter(url => url !== '');
+        const thumbnailImg = imagesArray.length > 0 ? imagesArray[0] : 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400';
+
+        // 3. Susun objek produk baru sesuai struktur database.js
+        const newProduct = {
+            id: Date.now(), // Generate ID unik otomatis
+            title: nameInput,
+            slug: slugInput || nameInput.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            brand: brandSelect,
+            category: categorySelect,
+            old_price: oldPriceInput || priceInput,
+            price: priceInput,
+            thumbnail: thumbnailImg,
+            images: imagesArray.length > 0 ? imagesArray : [thumbnailImg],
+            affiliate_url: affiliateInput,
+            description: descInput,
+            status: statusSelect.toLowerCase() // Diubah ke 'active' kecil agar lolos filter grid depan
+        };
+
+        // 4. Ambil database lokal saat ini, gabungkan produk baru di urutan paling atas
+        let currentProducts = JSON.parse(localStorage.getItem('zg_products')) || products;
+        currentProducts.unshift(newProduct);
+
+        // 5. Kunci penyimpanan ke LocalStorage dan Variabel Global App
+        localStorage.setItem('zg_products', JSON.stringify(currentProducts));
+        products = currentProducts;
+
+        // 6. Tampilkan notifikasi sukses
+        alert("🎉 Produk \"" + nameInput + "\" Berhasil Diterbitkan!");
+
+        // 7. Alihkan halaman kembali ke beranda untuk melihat produk baru Anda
+        window.location.hash = "#/";
+
+    } catch (error) {
+        alert("Sistem mendeteksi error saat menyimpan: " + error.message);
+        console.error(error);
+    }
+}
+
+// Daftarkan fungsi ke ranah global window agar atribut onclick HTML bisa memanggilnya
+window.handlePublishProduct = handlePublishProduct;
+defineGlobal('handlePublishProduct', handlePublishProduct);
