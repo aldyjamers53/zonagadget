@@ -75,7 +75,7 @@ function renderActiveTabContent() {
     
     if (activeAdminTab === 'stats') {
         let totalProd = products.length;
-        let activeProd = products.filter(p => p.status === 'active').length;
+        let activeProd = products.filter(p => p.status === 'active' || p.status === 'Active').length;
         let inactiveProd = totalProd - activeProd;
         
         target.innerHTML = `
@@ -122,12 +122,12 @@ function renderActiveTabContent() {
                     <label>Harga Promo</label>
                     <input type="number" id="form-price" class="form-control" value="${p ? p.price : 0}">
                 </div>
-                <div class="form-group">
-    <label for="product-images-input" style="font-weight: 600; display: block; margin-bottom: 8px;">
-        URL Foto Produk (Bisa isi sampai 8 foto, pisahkan dengan tanda koma)
-    </label>
-    <input type="text" id="product-images-input" class="form-control" placeholder="Contoh: https://link.com/foto1.jpg, https://link.com/foto2.jpg" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
-</div>
+                <div class="form-group" style="grid-column: 1/-1;">
+                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">
+                        URL Foto Produk (Bisa isi sampai 8 foto, pisahkan dengan tanda koma)
+                    </label>
+                    <input type="text" id="product-images-input" class="form-control" value="${imagesValue}" placeholder="Contoh: https://link.com/foto1.jpg, https://link.com/foto2.jpg" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                </div>
                 <div class="form-group" style="grid-column: 1/-1;">
                     <label>Link Affiliate Shopee</label>
                     <input type="text" id="form-aff" class="form-control" value="${p ? p.affiliate_url : 'https://shopee.co.id'}">
@@ -139,8 +139,8 @@ function renderActiveTabContent() {
                 <div class="form-group">
                     <label>Status</label>
                     <select id="form-status" class="form-control">
-                        <option value="active" ${p && p.status==='active'?'selected':''}>Active</option>
-                        <option value="inactive" ${p && p.status==='inactive'?'selected':''}>Inactive</option>
+                        <option value="active" ${p && (p.status==='active' || p.status==='Active')?'selected':''}>Active</option>
+                        <option value="inactive" ${p && (p.status==='inactive' || p.status==='Inactive')?'selected':''}>Inactive</option>
                     </select>
                 </div>
             </div>
@@ -154,7 +154,6 @@ function renderActiveTabContent() {
                 slugIn.value = titleIn.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
             });
         }
-        updateAdminImagePreview(imagesValue);
     }
     else if (activeAdminTab === 'manage-products') {
         let html = `
@@ -172,7 +171,7 @@ function renderActiveTabContent() {
                     <td><strong>${p.title}</strong></td>
                     <td>${p.brand}</td>
                     <td>Rp ${p.price.toLocaleString('id-ID')}</td>
-                    <td><span style="color:${p.status==='active'?'#22c55e':'#ef4444'}">${p.status.toUpperCase()}</span></td>
+                    <td><span style="color:${(p.status==='active' || p.status==='Active')?'#22c55e':'#ef4444'}">${p.status.toUpperCase()}</span></td>
                     <td>
                         <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem; margin-right:4px;" onclick="startEditProduct(${p.id})">Edit</button>
                         <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteProduct(${p.id})">Hapus</button>
@@ -218,23 +217,6 @@ function renderActiveTabContent() {
     }
 }
 
-function updateAdminImagePreview(rawUrls) {
-    const previewBox = document.getElementById('form-img-preview-box');
-    if(!previewBox) return;
-    previewBox.innerHTML = '';
-    if(!rawUrls.trim()) return;
-
-    let urls = rawUrls.split(',').map(url => url.trim()).filter(url => url !== '');
-    if(urls.length > 8) urls = urls.slice(0, 8);
-
-    urls.forEach(url => {
-        let div = document.createElement('div');
-        div.className = 'img-preview';
-        div.innerHTML = `<img src="${url}" onerror="this.parentElement.innerHTML='<span style=color:red;font-size:10px>Error</span>'">`;
-        previewBox.appendChild(div);
-    });
-}
-
 function startEditProduct(id) {
     editingProductId = id;
     activeAdminTab = "add-product";
@@ -242,18 +224,22 @@ function startEditProduct(id) {
 }
 
 function saveProductData() {
-    const title = document.getElementById('form-title').value;
-    const slug = document.getElementById('form-slug').value;
+    const title = document.getElementById('form-title').value.trim();
+    let slug = document.getElementById('form-slug').value.trim();
     const brand = document.getElementById('form-brand').value;
     const category = document.getElementById('form-category').value;
     const old_price = parseInt(document.getElementById('form-oldprice').value) || 0;
     const price = parseInt(document.getElementById('form-price').value) || 0;
-    const rawThumb = document.getElementById('form-thumb').value;
-    const affiliate_url = document.getElementById('form-aff').value;
-    const description = document.getElementById('form-desc').value;
+    const rawThumb = document.getElementById('product-images-input').value.trim(); // <-- KUNCI PERBAIKAN: Diubah ke 'product-images-input'
+    const affiliate_url = document.getElementById('form-aff').value.trim();
+    const description = document.getElementById('form-desc').value.trim();
     const status = document.getElementById('form-status').value;
 
-    if(!title || !slug) { alert("Judul dan Slug wajib diisi!"); return; }
+    if(!title) { alert("Nama Produk wajib diisi!"); return; }
+    
+    if(!slug) {
+        slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
 
     let imageArray = rawThumb.split(',').map(url => url.trim()).filter(url => url !== '');
     if(imageArray.length === 0) {
@@ -268,15 +254,15 @@ function saveProductData() {
                 ...products[index], title, slug, brand, category, price, old_price, description, affiliate_url, status,
                 thumbnail: mainThumbnail, images: imageArray
             };
-            alert("Produk berhasil diperbarui!");
+            alert("🎉 Produk berhasil diperbarui!");
         }
     } else {
-        const newId = products.length > 0 ? Math.max(...products.map(p=>p.id)) + 1 : 1;
+        const newId = Date.now(); // Gunakan ID Unik berbasis waktu agar terhindar dari tabrakan duplikat ID
         products.unshift({
             id: newId, title, slug, brand, category, price, old_price, description, affiliate_url, status,
             thumbnail: mainThumbnail, images: imageArray
         });
-        alert("Produk baru berhasil diterbitkan!");
+        alert("🎉 Produk baru berhasil diterbitkan!");
     }
     
     localStorage.setItem('zg_products', JSON.stringify(products));
