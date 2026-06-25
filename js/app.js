@@ -1,10 +1,17 @@
-// STATE MANAGEMENT CONTEXT CLIENT
+// =========================================================================
+// STATE MANAGEMENT CONTEXT CLIENT & LOCALSTORAGE SINKRONISASI
+// =========================================================================
 let currentFilterCategory = "Semua";
 let currentFilterBrand = "Semua";
 let currentSort = "terbaru";
 let currentSearchQuery = "";
 let currentPage = 1;
 const productsPerPage = 12; // Jumlah batasan limit produk per halaman link pagination
+
+// KUNCI PERBAIKAN: Selalu muat data terbaru dari LocalStorage jika tersedia
+if (localStorage.getItem('zg_products')) {
+    products = JSON.parse(localStorage.getItem('zg_products'));
+}
 
 const appView = document.getElementById('app-view');
 const themeToggle = document.getElementById('theme-toggle');
@@ -50,6 +57,11 @@ window.addEventListener('hashchange', router);
 window.addEventListener('DOMContentLoaded', router);
 
 function router() {
+    // Sinkronisasi ulang variabel products setiap kali rute halaman berubah
+    if (localStorage.getItem('zg_products')) {
+        products = JSON.parse(localStorage.getItem('zg_products'));
+    }
+    
     const hash = window.location.hash || '#/';
     document.getElementById('global-search-box').style.display = hash.includes('/admin-panel-secret') ? 'none' : 'block';
 
@@ -130,7 +142,7 @@ defineGlobal('setBrandFilter', setBrandFilter);
 
 function renderProductGrid() {
     const gridTarget = document.getElementById('products-grid-target');
-    let filtered = products.filter(p => p.status === 'active');
+    let filtered = products.filter(p => p.status === 'active' || p.status === 'Active');
 
     if (currentFilterCategory !== 'Semua') filtered = filtered.filter(p => p.category === currentFilterCategory);
     if (currentFilterBrand !== 'Semua') filtered = filtered.filter(p => p.brand === currentFilterBrand);
@@ -185,7 +197,6 @@ function renderProductGrid() {
         // Tombol Prev
         paginationHtml += `<button class="brand-btn" style="width:auto; padding: 8px 12px;" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="changePage(${currentPage - 1})"`}>&larr; Prev</button>`;
         
-        // Menentukan range nomor halaman yang tampil agar minimal 6 nomor (jika tersedia)
         let maxVisibleButtons = 6; 
         let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
         let endPage = startPage + maxVisibleButtons - 1;
@@ -195,7 +206,6 @@ function renderProductGrid() {
             startPage = Math.max(1, endPage - maxVisibleButtons + 1);
         }
 
-        // Looping mencetak nomor halaman
         for (let i = startPage; i <= endPage; i++) {
             paginationHtml += `
                 <button class="brand-btn ${currentPage === i ? 'active' : ''}" 
@@ -211,7 +221,7 @@ function renderProductGrid() {
     }
 
     gridTarget.innerHTML = productsHtml + paginationHtml;
-} // <-- PERBAIKAN: Menutup fungsi renderProductGrid() dengan benar di sini
+}
 
 function changePage(pageNumber) {
     currentPage = pageNumber;
